@@ -1,160 +1,147 @@
 # Text Encryption and Decryption Program
 
-def encrypt_text(text, shift1, shift2):
+def encrypt(text, shift1, shift2):
     result = ""
-    
-    for char in text:
-        # Handle lowercase letters (a-z)
-        if char >= 'a' and char <= 'z':
-            pos = ord(char) - ord('a')
-            
-            if pos <= 12:  # first half (a-m)
+    for ch in text:
+        if 'a' <= ch <= 'z':   # lowercase
+            pos = ord(ch) - ord('a')
+            if pos <= 12:      # a-m
                 new_pos = (pos + shift1 * shift2) % 26
-                # Add marker to remember this was first half
-                result += chr(new_pos + ord('a')) + '\x00'  # null character as marker
-            else:  # second half (n-z)
+                result += chr(new_pos + ord('a')) + '\x00'   # marker for first half
+            else:              # n-z
                 new_pos = (pos - (shift1 + shift2)) % 26
-                # Add different marker for second half
-                result += chr(new_pos + ord('a')) + '\x01'
-            
-        # Handle uppercase letters (A-Z)
-        elif char >= 'A' and char <= 'Z':
-            pos = ord(char) - ord('A')
-            
-            if pos <= 12:  # first half (A-M)
+                result += chr(new_pos + ord('a')) + '\x01'   # marker for second half
+
+        elif 'A' <= ch <= 'Z':  # uppercase
+            pos = ord(ch) - ord('A')
+            if pos <= 12:       # A-M
                 new_pos = (pos - shift1) % 26
                 result += chr(new_pos + ord('A')) + '\x00'
-            else:  # second half (N-Z)
-                new_pos = (pos + shift2 * shift2) % 26
+            else:               # N-Z
+                new_pos = (pos + (shift2 ** 2)) % 26
                 result += chr(new_pos + ord('A')) + '\x01'
-            
-        # Keep other characters as they are
-        else:
-            result += char
-    
+
+        else:   # keep other characters
+            result += ch
+
     return result
 
-def decrypt_text(encrypted_text, shift1, shift2):
+
+def decrypt(text, shift1, shift2):
     result = ""
     i = 0
-    
-    while i < len(encrypted_text):
-        char = encrypted_text[i]
-        
-        # Handle lowercase letters (a-z)
-        if char >= 'a' and char <= 'z':
-            # Check the marker to know which rule was used
-            if i + 1 < len(encrypted_text) and encrypted_text[i + 1] == '\x00':
-                # Was first half originally, reverse the first half rule
-                pos = ord(char) - ord('a')
-                original_pos = (pos - shift1 * shift2) % 26
-                result += chr(original_pos + ord('a'))
-                i += 2  # Skip the marker
-            elif i + 1 < len(encrypted_text) and encrypted_text[i + 1] == '\x01':
-                # Was second half originally, reverse the second half rule
-                pos = ord(char) - ord('a')
-                original_pos = (pos + (shift1 + shift2)) % 26
-                result += chr(original_pos + ord('a'))
-                i += 2  # Skip the marker
-            else:
-                result += char
-                i += 1
-                
-        # Handle uppercase letters (A-Z)
-        elif char >= 'A' and char <= 'Z':
-            if i + 1 < len(encrypted_text) and encrypted_text[i + 1] == '\x00':
-                # Was first half originally
-                pos = ord(char) - ord('A')
-                original_pos = (pos + shift1) % 26
-                result += chr(original_pos + ord('A'))
+    while i < len(text):
+        ch = text[i]
+
+        if 'a' <= ch <= 'z':   # lowercase
+            if i + 1 < len(text) and text[i+1] == '\x00':   # first half originally
+                pos = ord(ch) - ord('a')
+                new_pos = (pos - shift1 * shift2) % 26
+                result += chr(new_pos + ord('a'))
                 i += 2
-            elif i + 1 < len(encrypted_text) and encrypted_text[i + 1] == '\x01':
-                # Was second half originally
-                pos = ord(char) - ord('A')
-                original_pos = (pos - shift2 * shift2) % 26
-                result += chr(original_pos + ord('A'))
+            elif i + 1 < len(text) and text[i+1] == '\x01': # second half originally
+                pos = ord(ch) - ord('a')
+                new_pos = (pos + (shift1 + shift2)) % 26
+                result += chr(new_pos + ord('a'))
                 i += 2
             else:
-                result += char
+                result += ch
                 i += 1
-                
-        # Keep other characters as they are
+
+        elif 'A' <= ch <= 'Z':  # uppercase
+            if i + 1 < len(text) and text[i+1] == '\x00':   # first half originally
+                pos = ord(ch) - ord('A')
+                new_pos = (pos + shift1) % 26
+                result += chr(new_pos + ord('A'))
+                i += 2
+            elif i + 1 < len(text) and text[i+1] == '\x01': # second half originally
+                pos = ord(ch) - ord('A')
+                new_pos = (pos - (shift2 ** 2)) % 26
+                result += chr(new_pos + ord('A'))
+                i += 2
+            else:
+                result += ch
+                i += 1
+
         else:
-            result += char
+            result += ch
             i += 1
-    
+
     return result
 
-def encryption_function(shift1, shift2):
+
+def encrypt_file(shift1, shift2):
     try:
-        with open(r'C:\Users\dipak\Desktop\Software now\raw_text.txt', 'r') as file:
-            content = file.read()
-        
-        encrypted_content = encrypt_text(content, shift1, shift2)
-        
-        with open(r'C:\Users\dipak\Desktop\Software now\encrypted_text.txt', 'w', encoding='utf-8') as file:
-            file.write(encrypted_content)
-        
+        with open(r'C:\Users\dipak\Desktop\Software now\raw_text.txt', 'r', encoding='utf-8') as f:
+            text = f.read()
+
+        encrypted = encrypt(text, shift1, shift2)
+
+        with open(r'C:\Users\dipak\Desktop\Software now\encrypted_text.txt', 'w', encoding='utf-8') as f:
+            f.write(encrypted)
+
         print("Encryption completed!")
-        
-    except FileNotFoundError:
-        print("Error: raw_text.txt not found!")
-    except Exception as e:
-        print(f"Encryption error: {e}")
 
-def decryption_function(shift1, shift2):
+    except FileNotFoundError:
+        print("raw_text.txt not found.")
+    except Exception as e:
+        print("Error during encryption:", e)
+
+
+def decrypt_file(shift1, shift2):
     try:
-        with open(r'C:\Users\dipak\Desktop\Software now\encrypted_text.txt', 'r', encoding='utf-8') as file:
-            encrypted_content = file.read()
-        
-        decrypted_content = decrypt_text(encrypted_content, shift1, shift2)
-        
-        with open(r'C:\Users\dipak\Desktop\Software now\decrypted_text.txt', 'w', encoding='utf-8') as file:
-            file.write(decrypted_content)
-        
+        with open(r'C:\Users\dipak\Desktop\Software now\encrypted_text.txt', 'r', encoding='utf-8') as f:
+            encrypted = f.read()
+
+        decrypted = decrypt(encrypted, shift1, shift2)
+
+        with open(r'C:\Users\dipak\Desktop\Software now\decrypted_text.txt', 'w', encoding='utf-8') as f:
+            f.write(decrypted)
+
         print("Decryption completed!")
-        
-    except FileNotFoundError:
-        print("Error: encrypted_text.txt not found!")
-    except Exception as e:
-        print(f"Decryption error: {e}")
 
-def verification_function():
+    except FileNotFoundError:
+        print("encrypted_text.txt not found.")
+    except Exception as e:
+        print("Error during decryption:", e)
+
+
+def verify():
     try:
-        with open(r'C:\Users\dipak\Desktop\Software now\raw_text.txt', 'r', encoding='utf-8') as file:
-            original_content = file.read()
-        
-        with open(r'C:\Users\dipak\Desktop\Software now\decrypted_text.txt', 'r', encoding='utf-8') as file:
-            decrypted_content = file.read()
-        
-        if original_content == decrypted_content:
+        with open(r'C:\Users\dipak\Desktop\Software now\raw_text.txt', 'r', encoding='utf-8') as f:
+            original = f.read()
+
+        with open(r'C:\Users\dipak\Desktop\Software now\decrypted_text.txt', 'r', encoding='utf-8') as f:
+            decrypted = f.read()
+
+        if original == decrypted:
             print("Verification: SUCCESS - files match!")
         else:
-            print("Verification: FAILED - files don't match!")
-            print(f"Original: {len(original_content)} characters")
-            print(f"Decrypted: {len(decrypted_content)} characters")
-            
-    except FileNotFoundError:
-        print("Error: files not found for verification!")
-    except Exception as e:
-        print(f"Verification error: {e}")
+            print("Verification: FAILED - files do not match.")
+            print("Original length:", len(original))
+            print("Decrypted length:", len(decrypted))
 
-# Main program
+    except FileNotFoundError:
+        print("Files not found for verification.")
+    except Exception as e:
+        print("Error during verification:", e)
+
+
 if __name__ == "__main__":
     print("Text Encryption Program")
-    print("=" * 25)
-    
+    print("=======================")
+
     try:
         shift1 = int(input("Enter shift1: "))
         shift2 = int(input("Enter shift2: "))
     except ValueError:
-        print("Please enter valid numbers!")
+        print("Please enter numbers only.")
         exit()
-    
-    print(f"Using shifts: {shift1}, {shift2}")
-    
-    encryption_function(shift1, shift2)
-    decryption_function(shift1, shift2)
-    verification_function()
-    
+
+    print("Using shifts:", shift1, ",", shift2)
+
+    encrypt_file(shift1, shift2)
+    decrypt_file(shift1, shift2)
+    verify()
+
     print("Done!")
